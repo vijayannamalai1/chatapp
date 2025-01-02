@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{title}}</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  
+  <div class="chat-container">
+    <!-- Users list -->
+    <div class="users-list">
+      <h3>Other users</h3>
+    <ul>
+  {{#if users.length}}
+    {{#each users}}
+      <li>{{this.username}}</li> <!-- Display each user's username -->
+    {{/each}}
+  {{else}}
+    <li>No other users</li> <!-- Message to display if there are no users -->
+  {{/if}}
+</ul>
+
+    </div>
+
+    <!-- Chat box -->
+    <div class="chat-box">
+      <div id="messages" class="messages">
+        <!-- Chat messages will be displayed here -->
+      </div>
+      
+      <textarea id="messageInput" placeholder="Type a message..."></textarea>
+      <button id="sendMessageBtn">Send</button>
+    </div>
+
+    <a href="/logout">Logout</a>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // Pass the logged-in user's username from Handlebars into a JavaScript variable
+    const loggedInUser = "{{loggedInUser}}";
+
+    // Connect to the Socket.io server
+    const socket = io();
+
+    // Get elements from the DOM
+    const messageInput = document.getElementById('messageInput');
+    const sendMessageBtn = document.getElementById('sendMessageBtn');
+    const messagesContainer = document.getElementById('messages');
+
+    // Send the message to the server when the button is clicked
+    sendMessageBtn.addEventListener('click', () => {
+      const message = messageInput.value.trim();
+      
+      if (message) {
+        socket.emit('chatMessage', message, loggedInUser);  // Emit message to the server along with logged-in username
+        messageInput.value = '';  // Clear the input field
+      }
+    });
+
+    // Listen for incoming messages from the server and display them in the chat box
+    socket.on('chatMessage', ({ msg, username }) => {
+      const messageElement = document.createElement('div');
+      messageElement.classList.add('message');
+      messageElement.textContent = `${username}: ${msg}`;  // Show the username with the message
+      messagesContainer.appendChild(messageElement);
+    });
+
+    // Optionally, load previous messages when the user connects
+    socket.on('loadMessages', (messages) => {
+      messages.forEach(({ text, username }) => {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message');
+        messageElement.textContent = `${username}: ${text}`;  // Show the username with the message
+        messagesContainer.appendChild(messageElement);
+      });
+    });
+  </script>
+</body>
+</html>
